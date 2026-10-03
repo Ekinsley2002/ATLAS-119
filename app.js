@@ -350,6 +350,7 @@ function stickFrom(e){
   placeKnob(dx, dy);
 }
 stickEl.addEventListener('pointerdown', e => {
+  if (document.body.classList.contains('arrange')) return;
   stickEl.setPointerCapture(e.pointerId);
   stick.active = true;
   stickFrom(e);
@@ -579,6 +580,55 @@ $('menuBtn').onclick = () => {
   $('menuBtn').classList.toggle('on', open);
   $('menuBtn').textContent = open ? 'close' : 'menu';
 };
+/* Panels stay put until this is on. Then each outlined panel can be dragged. */
+let arranging = false;
+$('tglMove').onclick = e => {
+  e.stopPropagation();
+  arranging = !arranging;
+  document.body.classList.toggle('arrange', arranging);
+  $('tglMove').classList.toggle('on', arranging);
+  $('tglMove').textContent = arranging ? 'lock panels' : 'move panels';
+};
+let panelDrag = null;
+function pinPanel(el){
+  const r = el.getBoundingClientRect();
+  el.style.left = r.left + 'px';
+  el.style.top = r.top + 'px';
+  el.style.right = 'auto';
+  el.style.bottom = 'auto';
+  el.style.transform = 'none';
+  el.style.width = r.width + 'px';
+  el.style.margin = '0';
+}
+document.addEventListener('pointerdown', e => {
+  if (!arranging || e.target.closest('#tglMove')) return;
+  const el = e.target.closest('[data-move]');
+  if (!el || el.style.display === 'none') return;
+  e.preventDefault();
+  e.stopPropagation();
+  pinPanel(el);
+  const r = el.getBoundingClientRect();
+  panelDrag = { el, dx: e.clientX - r.left, dy: e.clientY - r.top };
+  el.classList.add('dragging');
+}, true);
+document.addEventListener('pointermove', e => {
+  if (!panelDrag) return;
+  const el = panelDrag.el;
+  const w = el.offsetWidth, h = el.offsetHeight;
+  let x = e.clientX - panelDrag.dx;
+  let y = e.clientY - panelDrag.dy;
+  x = Math.max(-w + 28, Math.min(innerWidth - 28, x));
+  y = Math.max(0, Math.min(innerHeight - 28, y));
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+}, true);
+function endPanelDrag(){
+  if (!panelDrag) return;
+  panelDrag.el.classList.remove('dragging');
+  panelDrag = null;
+}
+document.addEventListener('pointerup', endPanelDrag, true);
+document.addEventListener('pointercancel', endPanelDrag, true);
 function bumpSpeed(factor){
   cam.speed = Math.max(1e-9, Math.min(5000, cam.speed * factor));
 }

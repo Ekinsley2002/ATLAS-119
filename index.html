@@ -101,6 +101,13 @@
   body.touch #stick, body.touch #speedbtns{display:block;}
   body.touch #speedbtns{display:flex;}
   body.touch #help{display:none;}
+  body.arrange [data-move]{
+    outline:1px dashed rgba(150,196,255,.85); outline-offset:3px;
+    cursor:grab; pointer-events:auto !important; z-index:30;
+  }
+  body.arrange [data-move] *{pointer-events:none;}
+  body.arrange #tglMove{pointer-events:auto;}
+  body.arrange [data-move].dragging{cursor:grabbing; outline-color:#fff;}
 
   @media (max-width: 820px){
     #menuBtn{display:inline-block;}
@@ -146,15 +153,15 @@
 <canvas id="gl"></canvas>
 <canvas id="hud"></canvas>
 
-<button id="menuBtn" class="tgl" type="button">menu</button>
+<button id="menuBtn" class="tgl" type="button" data-move>menu</button>
 
-<div id="title" class="panel">
+<div id="title" class="panel" data-move>
   <h1>ATLAS <b>119</b></h1>
   <div class="sub">THE REAL STELLAR NEIGHBORHOOD &middot; HYG v4.1 SURVEY DATA</div>
   <div id="stats"></div>
 </div>
 
-<div id="nav" class="panel">
+<div id="nav" class="panel" data-move>
   <input id="search" list="starnames" placeholder="Search a real star… (try Sirius)">
   <datalist id="starnames"></datalist>
   <div class="chips" id="chips"></div>
@@ -165,12 +172,13 @@
     <button class="tgl" id="tglAbs">true luminosity</button>
     <button class="tgl" id="tglTour" style="border-color:#d9a94e;color:#ffd98a;">&#9654; tour</button>
     <button class="tgl" id="tglFull">fullscreen</button>
+    <button class="tgl" id="tglMove" type="button">move panels</button>
   </div>
   <div class="xlab">EXPOSURE</div>
   <input type="range" id="exposure" min="-1" max="2.2" step="0.01" value="1.4">
 </div>
 
-<div id="info" class="panel">
+<div id="info" class="panel" data-move>
   <h2 id="iName"></h2>
   <div class="des" id="iDes"></div>
   <table>
@@ -184,7 +192,7 @@
   <div class="row"><button id="btnGoto" class="tgl" style="flex:1">fly to this star</button></div>
 </div>
 
-<div id="timebox" class="panel">
+<div id="timebox" class="panel" data-move>
   <div class="lab">TIME MACHINE &mdash; REAL MEASURED STELLAR MOTION</div>
   <div class="trow">
     <button id="playbtn" class="tgl">&#9654;</button>
@@ -193,9 +201,9 @@
   </div>
 </div>
 
-<div id="stick"><div id="knob"></div></div>
+<div id="stick" data-move><div id="knob"></div></div>
 
-<div id="speedbox">
+<div id="speedbox" data-move>
   <div class="big" id="spd"></div>
   <div class="small" id="zoom"></div>
   <div class="small" id="dsol"></div>
@@ -205,12 +213,12 @@
   </div>
 </div>
 
-<div id="help">
+<div id="help" data-move>
   <b>drag</b> look &nbsp; <b>pinch</b> zoom &nbsp; <b>W A S D</b> fly &nbsp; <b>scroll</b> speed &nbsp;
   <b>shift</b> boost &nbsp; <b>click</b> a star
 </div>
 
-<div id="caption"></div>
+<div id="caption" data-move></div>
 
 <div id="intro">
   <h1>ATLAS <b>119</b></h1>
