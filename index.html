@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ATLAS 119 — the real stellar neighborhood</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{width:100%;height:100%;height:100dvh;overflow:hidden;background:#000;
+    font-family:"Segoe UI",system-ui,sans-serif; color:#c8d8ea;
+    touch-action:none; overscroll-behavior:none; user-select:none; -webkit-user-select:none;
+    -webkit-touch-callout:none;}
+  input,button{touch-action:manipulation; user-select:auto; -webkit-user-select:auto;}
+  input[type=range]{touch-action:pan-x;}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block; touch-action:none;}
+  #hud{pointer-events:none;}
+  .panel{
+    position:absolute; background:rgba(8,14,24,.72); border:1px solid rgba(90,140,200,.25);
+    border-radius:10px; padding:10px 14px; backdrop-filter:blur(6px);
+    font-size:12.5px; line-height:1.5;
+  }
+  #title{top:14px;left:14px; pointer-events:none;}
+  #title h1{font-size:19px; font-weight:300; letter-spacing:4px; color:#eaf2fb;}
+  #title h1 b{font-weight:700; color:#7db4ff;}
+  #title .sub{font-size:10.5px; color:#7e96ad; letter-spacing:1px; margin-top:2px;}
+  #stats{font-size:10.5px; color:#53718c; margin-top:6px; font-variant-numeric:tabular-nums;}
+
+  #nav{top:14px; right:14px; width:230px;}
+  #nav input{width:100%; background:rgba(10,20,34,.9); border:1px solid rgba(90,140,200,.35);
+    border-radius:6px; color:#dfeaf5; padding:6px 9px; font-size:13px; outline:none;}
+  #nav input:focus{border-color:#4f8fdd;}
+  .chips{display:flex; flex-wrap:wrap; gap:4px; margin-top:8px;}
+  .chips button, .tgl{
+    background:rgba(40,70,110,.35); color:#a9c4de; border:1px solid rgba(90,140,200,.3);
+    border-radius:5px; padding:3px 8px; font-size:11px; cursor:pointer;
+  }
+  .chips button:hover{background:rgba(70,120,180,.5); color:#fff;}
+  .tgl.on{background:rgba(60,130,220,.55); color:#fff;}
+  .row{display:flex; gap:4px; margin-top:8px; flex-wrap:wrap;}
+
+  #info{left:14px; top:110px; width:250px; display:none;}
+  #info h2{font-size:16px; font-weight:600; color:#fff;}
+  #info .des{color:#6f8aa5; font-size:11px; margin-bottom:7px;}
+  #info table{width:100%; border-collapse:collapse; font-size:12px;}
+  #info td{padding:2.5px 0; vertical-align:top;}
+  #info td:first-child{color:#6f8aa5; padding-right:10px; white-space:nowrap;}
+  #info td:last-child{color:#dceafd; text-align:right; font-variant-numeric:tabular-nums;}
+  #info .swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;}
+
+  #timebox{bottom:14px; left:50%; transform:translateX(-50%); width:min(620px,86vw); text-align:center;}
+  #timebox .trow{display:flex; align-items:center; gap:10px;}
+  #timebox input[type=range]{flex:1; accent-color:#5a9bdd;}
+  #timeval{min-width:118px; text-align:right; font-variant-numeric:tabular-nums; color:#9fc3e8; font-size:12px;}
+  #timebox .lab{font-size:10px; letter-spacing:2px; color:#5f7f9d; margin-bottom:3px;}
+  #playbtn{width:30px;}
+
+  #speedbox{position:absolute; z-index:4; bottom:14px; right:14px; text-align:right; font-variant-numeric:tabular-nums; pointer-events:none;}
+  #speedbox .big{font-size:15px; color:#eaf4ff;}
+  #speedbox .small{font-size:10.5px; color:#5f7f9d;}
+
+  #help{bottom:14px; left:14px; font-size:10.5px; color:#54708a; pointer-events:none; line-height:1.7;}
+  #help b{color:#8fb0cc; font-weight:600;}
+
+  #caption{
+    position:absolute; bottom:110px; left:50%; transform:translateX(-50%);
+    max-width:640px; text-align:center; font-size:17px; font-weight:300; color:#eef6ff;
+    text-shadow:0 2px 14px #000, 0 0 4px #000; pointer-events:none; opacity:0;
+    transition:opacity .8s; letter-spacing:.3px;
+  }
+  #intro{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; background:rgba(0,0,5,.78); z-index:10; cursor:pointer;
+    transition:opacity 1.2s;
+  }
+  #intro h1{font-size:34px; font-weight:200; letter-spacing:10px; color:#fff;}
+  #intro h1 b{font-weight:700; color:#7db4ff;}
+  #intro p{margin-top:14px; color:#9ab4cc; font-size:14px; max-width:520px; text-align:center; line-height:1.8;}
+  #intro .go{margin-top:28px; font-size:12px; letter-spacing:3px; color:#6fa8e8;
+    border:1px solid rgba(110,170,230,.4); padding:9px 26px; border-radius:20px;}
+  #exposure{accent-color:#5a9bdd; width:100%;}
+  .xlab{font-size:10px; letter-spacing:2px; color:#5f7f9d; margin-top:8px;}
+
+  #menuBtn{display:none; position:absolute; z-index:8; top:max(14px, env(safe-area-inset-top));
+    right:max(14px, env(safe-area-inset-right)); min-height:40px; padding:8px 14px;}
+  #stick{
+    display:none; position:absolute; z-index:5; touch-action:none;
+    left:max(14px, env(safe-area-inset-left));
+    bottom:calc(92px + env(safe-area-inset-bottom));
+    width:108px; height:108px; border-radius:50%;
+    background:rgba(8,14,24,.42); border:1px solid rgba(90,140,200,.4);
+  }
+  #knob{
+    position:absolute; left:50%; top:50%; width:46px; height:46px; margin:-23px 0 0 -23px;
+    border-radius:50%; background:rgba(100,168,235,.9);
+    box-shadow:0 0 16px rgba(80,150,230,.55);
+  }
+  #speedbtns{display:none; pointer-events:auto; justify-content:flex-end; gap:6px; margin-top:6px;}
+  #speedbtns button{min-width:40px; min-height:34px; font-size:18px; line-height:1;}
+  body.touch #stick, body.touch #speedbtns{display:block;}
+  body.touch #speedbtns{display:flex;}
+  body.touch #help{display:none;}
+
+  @media (max-width: 820px){
+    #menuBtn{display:inline-block;}
+    #title{top:max(10px, env(safe-area-inset-top)); left:max(10px, env(safe-area-inset-left));
+      max-width:calc(100vw - 108px); padding:8px 10px;}
+    #title h1{font-size:16px; letter-spacing:2px;}
+    #title .sub{display:none;}
+    #nav{display:none; top:calc(58px + env(safe-area-inset-top)); left:10px; right:10px;
+      width:auto; max-height:48dvh; overflow:auto; z-index:7;}
+    #nav.open{display:block;}
+    #nav input{font-size:16px; padding:10px;}
+    .chips{flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px;}
+    .chips button, .tgl{padding:8px 10px; font-size:13px;}
+    #info{top:calc(56px + env(safe-area-inset-top)); bottom:auto;
+      left:max(10px, env(safe-area-inset-left)); right:max(10px, env(safe-area-inset-right));
+      width:auto; max-height:36dvh; overflow:auto; z-index:6;}
+    #timebox{left:8px; right:8px; width:auto; transform:none;
+      bottom:max(8px, env(safe-area-inset-bottom)); z-index:6;}
+    #timebox .lab{letter-spacing:1px; font-size:9px;}
+    #timeval{min-width:92px; font-size:11px;}
+    #playbtn{min-width:40px; min-height:36px;}
+    #timebox input[type=range]{height:28px;}
+    #speedbox{right:max(12px, env(safe-area-inset-right));
+      bottom:calc(108px + env(safe-area-inset-bottom));}
+    #help{display:none;}
+    #caption{width:calc(100vw - 28px); max-width:none; font-size:15px; bottom:128px; padding:0 8px;}
+    #intro{padding:22px;}
+    #intro h1{font-size:26px; letter-spacing:4px;}
+    #intro p{font-size:14px; line-height:1.6;}
+    #btnGoto{min-height:42px; font-size:14px;}
+  }
+  @media (max-height: 480px){
+    #timebox .lab, #title .sub, #stats{display:none;}
+    #stick{width:78px; height:78px; bottom:calc(62px + env(safe-area-inset-bottom));}
+    #knob{width:34px; height:34px; margin:-17px 0 0 -17px;}
+    #caption{bottom:78px; font-size:14px;}
+    #intro h1{font-size:22px;}
+    #intro p{margin-top:8px;}
+  }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+
+<button id="menuBtn" class="tgl" type="button">menu</button>
+
+<div id="title" class="panel">
+  <h1>ATLAS <b>119</b></h1>
+  <div class="sub">THE REAL STELLAR NEIGHBORHOOD &middot; HYG v4.1 SURVEY DATA</div>
+  <div id="stats"></div>
+</div>
+
+<div id="nav" class="panel">
+  <input id="search" list="starnames" placeholder="Search a real star… (try Sirius)">
+  <datalist id="starnames"></datalist>
+  <div class="chips" id="chips"></div>
+  <div class="row">
+    <button class="tgl on" id="tglCon">constellations</button>
+    <button class="tgl on" id="tglLab">labels</button>
+    <button class="tgl" id="tglGrid">grid</button>
+    <button class="tgl" id="tglAbs">true luminosity</button>
+    <button class="tgl" id="tglTour" style="border-color:#d9a94e;color:#ffd98a;">&#9654; tour</button>
+    <button class="tgl" id="tglFull">fullscreen</button>
+  </div>
+  <div class="xlab">EXPOSURE</div>
+  <input type="range" id="exposure" min="-1" max="2.2" step="0.01" value="1.4">
+</div>
+
+<div id="info" class="panel">
+  <h2 id="iName"></h2>
+  <div class="des" id="iDes"></div>
+  <table>
+    <tr><td>Distance from Sun</td><td id="iDist"></td></tr>
+    <tr><td>Distance from you</td><td id="iDCam"></td></tr>
+    <tr><td>Spectral class</td><td id="iSpect"></td></tr>
+    <tr><td>Surface temp</td><td id="iTemp"></td></tr>
+    <tr><td>Luminosity</td><td id="iLum"></td></tr>
+    <tr><td>Seen from Earth</td><td id="iMag"></td></tr>
+  </table>
+  <div class="row"><button id="btnGoto" class="tgl" style="flex:1">fly to this star</button></div>
+</div>
+
+<div id="timebox" class="panel">
+  <div class="lab">TIME MACHINE &mdash; REAL MEASURED STELLAR MOTION</div>
+  <div class="trow">
+    <button id="playbtn" class="tgl">&#9654;</button>
+    <input type="range" id="time" min="-100000" max="100000" step="50" value="0">
+    <div id="timeval">present day</div>
+  </div>
+</div>
+
+<div id="stick"><div id="knob"></div></div>
+
+<div id="speedbox">
+  <div class="big" id="spd"></div>
+  <div class="small" id="zoom"></div>
+  <div class="small" id="dsol"></div>
+  <div id="speedbtns">
+    <button id="spdMinus" class="tgl" type="button" aria-label="slower">−</button>
+    <button id="spdPlus" class="tgl" type="button" aria-label="faster">+</button>
+  </div>
+</div>
+
+<div id="help">
+  <b>drag</b> look &nbsp; <b>pinch</b> zoom &nbsp; <b>W A S D</b> fly &nbsp; <b>scroll</b> speed &nbsp;
+  <b>shift</b> boost &nbsp; <b>click</b> a star
+</div>
+
+<div id="caption"></div>
+
+<div id="intro">
+  <h1>ATLAS <b>119</b></h1>
+  <p>You are about to stand at the Sun.<br>
+  Every point of light you will see is a <b>real star</b> — 109,401 of them —
+  at its true position in space, with its true color and brightness,
+  moving at its true measured velocity.<br><br>
+  Nothing here is invented.</p>
+  <div class="go">CLICK TO BEGIN</div>
+</div>
+
+<script src="data_stars.js"></script>
+<script src="data_meta.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
